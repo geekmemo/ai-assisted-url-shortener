@@ -190,7 +190,7 @@ rather than clicking through the above by hand:
 ```bash
 python -m pytest -v
 ```
-Expected: `30 passed`.
+Expected: `32 passed`.
 
 ## API
 

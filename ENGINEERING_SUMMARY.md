@@ -29,7 +29,7 @@ traceability, not just the resulting code.
 - **Working prototype**: `app/` — FastAPI service with `/health`,
   `POST /shorten`, `GET /{short_code}`, click analytics, per-IP rate
   limiting, an opt-in creation webhook, and structured request logging.
-- **Tests**: `tests/` — 30 tests, 100% line coverage across all
+- **Tests**: `tests/` — 32 tests, 100% line coverage across all
   application modules, including concurrency tests (25-thread and a live
   20-process concurrent test), a route-shadowing regression test, and
   resilience tests that deliberately force failures (DB commit errors,
