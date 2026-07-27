@@ -1,5 +1,7 @@
 # AI-Assisted URL Shortener
 
+[![CI](https://github.com/geekmemo/ai-assisted-url-shortener/actions/workflows/ci.yml/badge.svg)](https://github.com/geekmemo/ai-assisted-url-shortener/actions/workflows/ci.yml)
+
 A URL shortener service built as an AI-assisted engineering exercise: core APIs,
 analytics, and reliability features, developed with disciplined AI-assisted
 execution and traceable review decisions (see `REQUIREMENTS_ANALYSIS.md` and
@@ -44,16 +46,30 @@ With coverage:
 python -m pytest --cov=app --cov-report=term-missing
 ```
 
-## Lint
+## Quality gates
+
+All of these run automatically on every push via
+`.github/workflows/ci.yml` (see the CI badge above) — they're not just
+checks run manually once.
 
 ```bash
-python -m ruff check .
+python -m ruff check .              # lint / static analysis
+python -m bandit -r app/            # security static analysis
+python -m pip_audit -r requirements.txt   # dependency vulnerability scan
+python -m pytest --cov=app --cov-fail-under=100   # tests, coverage enforced
 ```
 
 `B008` (flake8-bugbear's "function call in default argument" rule) is
 deliberately disabled in `pyproject.toml` — it's a false positive for
 FastAPI's `Depends(...)` dependency-injection pattern, which relies on
 exactly that construct by design, not an accidental default-argument bug.
+
+**Known gap**: static type checking (`mypy`) was attempted but is
+blocked on this development machine by Windows Smart App Control (it
+blocks a compiled runtime dependency `mypy` relies on, even in a
+from-source install). Not added to CI either, since it was never
+verified to actually pass against this codebase from any machine —
+see `REQUIREMENTS_ANALYSIS.md` §4.4 for the full note.
 
 ## Troubleshooting
 

@@ -101,6 +101,27 @@ load and under partial failure of non-critical subsystems.
   one rule (`B008`) deliberately disabled and documented in
   `pyproject.toml` rather than silently suppressed, since it's a false
   positive for FastAPI's `Depends(...)` dependency-injection pattern.
+- Security static analysis (`bandit`) and dependency vulnerability
+  scanning (`pip-audit`) both run clean — the latter matters
+  specifically because AI-assisted dependency selection carries a real
+  risk of hallucinated package names or unknowingly pinning a version
+  with a known CVE; this was checked, not assumed safe.
+- All of the above (lint, security scan, dependency scan, tests at
+  100% coverage) run automatically in CI (`.github/workflows/ci.yml`)
+  on every push, so they're enforced gates, not just checks I happened
+  to run manually once.
+- **Known gap, not hidden**: `mypy` (static type checking) was
+  attempted twice — the standard install and a forced pure-Python
+  reinstall — and blocked both times by this development machine's
+  Smart App Control policy (it blocks a compiled runtime dependency
+  `mypy` relies on even in source form; the same class of OS-level
+  restriction that affected running `uvicorn.exe` directly earlier in
+  this project). Deliberately not added to CI either, since it was
+  never verified to actually pass against this codebase — adding an
+  unverified gate would risk a broken pipeline on its first real run,
+  which is worse than the gap itself. A genuine limitation to close
+  (from a machine without this restriction) before type-checking
+  maturity matches the project's other quality gates.
 
 ## 5. Design decisions and alternatives considered
 
