@@ -32,6 +32,12 @@ Then visit `http://127.0.0.1:8000/health` — should return `{"status": "ok"}`.
 pytest -v
 ```
 
+With coverage:
+
+```bash
+pytest --cov=app --cov-report=term-missing
+```
+
 ## Project status
 
 See `ASSESSMENT_CONTEXT.md` for the running task decomposition, scope

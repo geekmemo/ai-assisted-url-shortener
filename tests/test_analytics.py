@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 
@@ -50,3 +51,21 @@ def test_click_count_increments_atomically_under_concurrency(client):
         clicks = session.query(main_module.Click).filter_by(link_id=link.id).all()
         assert link.click_count == request_count
         assert len(clicks) == request_count
+
+
+def test_redirect_succeeds_even_if_click_recording_fails(client, monkeypatch):
+    # Proves the try/except SQLAlchemyError around click-count/log writes
+    # actually does what it's documented to do: a broken analytics write
+    # must never turn into a broken redirect.
+    test_client, main_module = client
+    short_code = _create_link(test_client, "https://example.com/resilient")
+
+    def failing_commit(self):
+        raise SQLAlchemyError("simulated commit failure")
+
+    monkeypatch.setattr(Session, "commit", failing_commit)
+
+    response = test_client.get(f"/{short_code}", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"].rstrip("/") == "https://example.com/resilient"

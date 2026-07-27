@@ -17,13 +17,31 @@ def test_shorten_rejects_invalid_url(client):
     assert response.status_code == 422
 
 
-def test_shorten_rejects_oversized_long_url(client):
+def test_shorten_rejects_url_beyond_pydantics_own_2083_cap(client):
+    # Pydantic's HttpUrl itself rejects anything over 2083 chars before our
+    # own validator ever runs. This proves that upstream cap still applies.
     test_client, _ = client
     oversized_path = "a" * 3000
 
     response = test_client.post("/shorten", json={"long_url": f"https://example.com/{oversized_path}"})
 
     assert response.status_code == 422
+
+
+def test_shorten_rejects_url_over_our_configured_max_length(client):
+    # Between our 2048-char config limit and Pydantic's own 2083-char cap:
+    # only our field_validator in app/schemas.py rejects this, so this is
+    # the test that actually exercises that code path (the 3000-char case
+    # above never reaches it — Pydantic's own limit fires first).
+    test_client, _ = client
+    url_over_our_limit = "https://example.com/" + ("a" * 2050)
+    assert len(url_over_our_limit) > 2048
+    assert len(url_over_our_limit) < 2083
+
+    response = test_client.post("/shorten", json={"long_url": url_over_our_limit})
+
+    assert response.status_code == 422
+    assert "exceeds maximum length" in response.text
 
 
 def test_shorten_retries_on_collision(client, monkeypatch):

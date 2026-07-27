@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 *.db
 .env
+.coverage
 
 # Schwab-internal assessment doc — do not commit (see ASSESSMENT_CONTEXT.md)
 Assignment AI-Proficient Software Engineer.md
