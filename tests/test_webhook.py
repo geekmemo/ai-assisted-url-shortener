@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 
 def test_webhook_not_called_when_url_not_configured(client, monkeypatch):
-    test_client, main_module = client
+    test_client, _ = client
     import app.webhook as webhook_module
 
     assert webhook_module.settings.webhook_url is None
@@ -28,10 +28,10 @@ def client_with_webhook(tmp_path, monkeypatch):
 
     import app.config
     import app.database
+    import app.main
     import app.models
     import app.rate_limiter
     import app.webhook
-    import app.main
 
     importlib.reload(app.config)
     importlib.reload(app.database)
@@ -45,7 +45,7 @@ def client_with_webhook(tmp_path, monkeypatch):
 
 
 def test_webhook_called_with_correct_payload_when_configured(client_with_webhook, monkeypatch):
-    test_client, main_module, webhook_module = client_with_webhook
+    test_client, _, webhook_module = client_with_webhook
 
     calls = []
 
@@ -76,7 +76,7 @@ def test_webhook_called_with_correct_payload_when_configured(client_with_webhook
 
 
 def test_shorten_succeeds_even_if_webhook_call_fails(client_with_webhook, monkeypatch):
-    test_client, main_module, webhook_module = client_with_webhook
+    test_client, _, webhook_module = client_with_webhook
 
     def failing_post(*args, **kwargs):
         raise httpx.ConnectError("simulated network failure")

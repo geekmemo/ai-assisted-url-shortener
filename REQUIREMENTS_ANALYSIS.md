@@ -97,6 +97,10 @@ load and under partial failure of non-critical subsystems.
 - A shared test fixture reloads every module holding process-level state
   (configuration, database engine, rate limiter, webhook settings)
   between tests, preventing state leakage across test cases.
+- Static analysis/linting (`ruff`) runs clean across the codebase, with
+  one rule (`B008`) deliberately disabled and documented in
+  `pyproject.toml` rather than silently suppressed, since it's a false
+  positive for FastAPI's `Depends(...)` dependency-injection pattern.
 
 ## 5. Design decisions and alternatives considered
 

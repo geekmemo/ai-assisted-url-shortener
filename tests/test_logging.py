@@ -33,7 +33,7 @@ def test_json_formatter_escapes_quotes_and_newlines_correctly():
 
 
 def test_request_completion_is_logged_with_request_id(client, caplog):
-    test_client, main_module = client
+    test_client, _ = client
 
     with caplog.at_level(logging.INFO, logger="app.main"):
         response = test_client.get("/health")
@@ -56,7 +56,7 @@ def test_caller_supplied_request_id_is_honored(client):
 
 
 def test_click_recording_failure_is_logged(client, caplog, monkeypatch):
-    test_client, main_module = client
+    test_client, _ = client
 
     created = test_client.post("/shorten", json={"long_url": "https://example.com/logged-failure"})
     short_code = created.json()["short_code"]
@@ -84,10 +84,10 @@ def client_with_webhook(tmp_path, monkeypatch):
 
     import app.config
     import app.database
+    import app.main
     import app.models
     import app.rate_limiter
     import app.webhook
-    import app.main
 
     importlib.reload(app.config)
     importlib.reload(app.database)
@@ -101,7 +101,7 @@ def client_with_webhook(tmp_path, monkeypatch):
 
 
 def test_webhook_failure_is_logged(client_with_webhook, caplog, monkeypatch):
-    test_client, main_module, webhook_module = client_with_webhook
+    test_client, _, webhook_module = client_with_webhook
 
     import httpx
 
@@ -134,10 +134,10 @@ def client_with_low_rate_limit(tmp_path, monkeypatch):
 
     import app.config
     import app.database
+    import app.main
     import app.models
     import app.rate_limiter
     import app.webhook
-    import app.main
 
     importlib.reload(app.config)
     importlib.reload(app.database)

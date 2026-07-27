@@ -17,10 +17,10 @@ def client(tmp_path, monkeypatch):
 
     import app.config
     import app.database
+    import app.main
     import app.models
     import app.rate_limiter
     import app.webhook
-    import app.main
 
     importlib.reload(app.config)
     importlib.reload(app.database)

@@ -44,6 +44,17 @@ With coverage:
 python -m pytest --cov=app --cov-report=term-missing
 ```
 
+## Lint
+
+```bash
+python -m ruff check .
+```
+
+`B008` (flake8-bugbear's "function call in default argument" rule) is
+deliberately disabled in `pyproject.toml` — it's a false positive for
+FastAPI's `Depends(...)` dependency-injection pattern, which relies on
+exactly that construct by design, not an accidental default-argument bug.
+
 ## Troubleshooting
 
 **`python : The term 'python' is not recognized` / opens the Microsoft

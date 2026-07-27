@@ -57,7 +57,7 @@ def test_redirect_succeeds_even_if_click_recording_fails(client, monkeypatch):
     # Proves the try/except SQLAlchemyError around click-count/log writes
     # actually does what it's documented to do: a broken analytics write
     # must never turn into a broken redirect.
-    test_client, main_module = client
+    test_client, _ = client
     short_code = _create_link(test_client, "https://example.com/resilient")
 
     def failing_commit(self):

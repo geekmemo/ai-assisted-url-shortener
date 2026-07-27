@@ -1,0 +1,8 @@
+[tool.ruff.lint]
+# B008 (flake8-bugbear "function call in default argument") is a false
+# positive for FastAPI's `Depends(...)` pattern: FastAPI's dependency
+# injection system specifically relies on `Depends(...)` appearing as a
+# parameter default and re-resolves it per request, rather than evaluating
+# it once at function-definition time like a normal Python default would.
+# This is the documented, idiomatic FastAPI usage, not a bug.
+ignore = ["B008"]
