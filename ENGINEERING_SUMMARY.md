@@ -52,6 +52,8 @@ traceability, not just the resulting code.
 | `X-Forwarded-For` spoofing could bypass rate limiting | Deliberately not trusted; IP is read from the actual transport-level connection (`request.client.host`), since there's no known/trusted reverse proxy in front of this prototype |
 | Test isolation gaps caused by shared module-level singletons (rate limiter, webhook settings) | Found twice during development (Task 6, ambiguous-scenario logging), root-caused both times, and fixed by consolidating into a single `tests/conftest.py` fixture that reloads every stateful module together, rather than patching symptoms per-file |
 | Schema sizing (`long_url` length, `short_code` length/entropy) chosen without external validation | Cross-checked against a standard system-design reference *after* the fact; both figures matched exactly, and one deliberate divergence (SQLite vs. the reference's NoSQL-at-scale recommendation) was identified and documented rather than silently accepted or blindly followed |
+| Structured logs weren't actually valid JSON when a message contained a quote or newline — found in a dedicated post-completion review pass, not by a bug report | Reproduced the failure directly (`json.loads` raising on a realistic exception message) before fixing it; replaced string-interpolated log formatting with a real `json.dumps`-based formatter, with a regression test covering the exact failure case |
+| Rate limiter's in-memory dict grew by one entry per distinct client key ever seen, with no eviction — same review pass | Added a periodic sweep that evicts expired entries, with a test that forces the sweep and asserts stale keys are actually removed |
 
 ## Assumptions
 
@@ -59,6 +61,7 @@ traceability, not just the resulting code.
 - No link expiry
 - Eventually-consistent analytics is acceptable (no real-time streaming requirement)
 - Collision handling via generate-and-retry with a capped attempt count, not pre-reserved counter-based IDs
+- No deduplication of `long_url` — each `/shorten` call gets its own new `short_code`, even for a URL submitted before (verified directly, not assumed)
 - Single-process deployment (rate limiter and in-memory state assume one instance)
 - `webhook_url` is operator-configured, never user-supplied per request (relevant to the SSRF risk assessment in the brownfield scenario)
 
@@ -88,3 +91,20 @@ traceability, not just the resulting code.
   observability down to what's implementable and valuable at this
   project's size, and named the rest as future work rather than
   building a placeholder integration with nothing behind it.
+
+## Evaluation criteria quick reference
+
+This table is a lookup aid for verifying a specific claim after the fact
+— it is not a substitute for walking through the reasoning behind these
+decisions, which is the point of a technical walkthrough discussion.
+
+| Evaluation criterion | Where to look |
+|---|---|
+| Effectiveness of AI-assisted execution | Local traceability log (accept/edit/reject with rationale per change) |
+| Architecture/system design quality | `ARCHITECTURE.md` (component + sequence diagrams, key decisions) |
+| Depth of decomposition and execution quality | `REQUIREMENTS_ANALYSIS.md` §2 (scope table), greenfield/brownfield/ambiguous task tables in the traceability log |
+| Realism/quality of outputs | `tests/` (32 tests, 100% coverage); every endpoint boot-verified against a live server, not just unit-tested |
+| Validation and risk management rigor | `REQUIREMENTS_ANALYSIS.md` §6 (risk register, including two issues found and fixed during review) |
+| Clarity and defensibility of decisions | `REQUIREMENTS_ANALYSIS.md` §5 and §7 (decisions with alternatives considered and external references) |
+| Modular / testable / reliable / secure / scalable / safe change management | Modular: one file per concern in `app/`. Testable: 100% coverage. Reliable: atomic updates, fault-isolated side effects. Secure: CSPRNG, SSRF-aware webhook design, OWASP references. Scalable: documented single-process limitation with a stated path forward. Safe change management: one commit per task, nothing pushed without review |
+| Engineering judgment | Rejected AI drafts and root-caused bugs throughout the traceability log, not just accepted output |

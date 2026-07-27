@@ -1,5 +1,48 @@
 # Architecture Overview
 
+## Component diagram
+
+```mermaid
+flowchart TB
+    Client(["Client"])
+
+    subgraph App["FastAPI application (app/main.py)"]
+        RL["RateLimitMiddleware"]
+        RLog["RequestLoggingMiddleware"]
+        Health["GET /health"]
+        Shorten["POST /shorten"]
+        Redirect["GET /{short_code}"]
+    end
+
+    Config["config.py<br/>settings"]
+    Codegen["codegen.py<br/>short code generation"]
+    Schemas["schemas.py<br/>request/response validation"]
+    RateLimiter["rate_limiter.py<br/>FixedWindowRateLimiter"]
+    Webhook["webhook.py<br/>send_link_created_webhook"]
+    LoggingConfig["logging_config.py<br/>JSON formatter + request_id"]
+    DB[("SQLite<br/>links, clicks")]
+    External(["External webhook receiver<br/>(operator-configured URL)"])
+
+    Client --> RL --> RLog
+    RLog --> Health
+    RLog --> Shorten
+    RLog --> Redirect
+
+    Shorten --> Schemas
+    Shorten --> Codegen
+    Shorten --> DB
+    Shorten -. "BackgroundTask<br/>(after response sent)" .-> Webhook
+    Webhook -. "HTTP POST" .-> External
+
+    Redirect --> DB
+
+    RL --> RateLimiter
+    RLog --> LoggingConfig
+    Config -.-> RL
+    Config -.-> Shorten
+    Config -.-> Redirect
+```
+
 ## Components
 
 ```
@@ -77,12 +120,63 @@ collision, up to max_collision_retries) -> commit -> schedule webhook
 as BackgroundTask (fires after response is sent) -> return 201
 ```
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant RL as RateLimitMiddleware
+    participant Log as RequestLoggingMiddleware
+    participant API as POST /shorten
+    participant Gen as codegen
+    participant DB as SQLite (links)
+    participant BG as BackgroundTask
+    participant WH as Webhook receiver
+
+    C->>RL: POST /shorten {long_url}
+    RL-->>C: 429 (if over threshold)
+    RL->>Log: allowed
+    Log->>API: dispatch
+    API->>API: validate long_url (Pydantic)
+    loop up to max_collision_retries
+        API->>Gen: generate_short_code()
+        API->>DB: INSERT Link
+        DB-->>API: OK, or IntegrityError on collision
+    end
+    API->>BG: schedule send_link_created_webhook
+    API-->>Log: 201 {short_code, long_url}
+    Log-->>C: 201 + X-Request-ID header
+    BG->>WH: POST link_created (after response already sent)
+```
+
 **`GET /{short_code}`:**
 ```
 Request -> RateLimitMiddleware -> RequestLoggingMiddleware -> look up
 Link by short_code (404 if missing) -> atomic SQL increment of
 click_count + insert Click row (commit failures logged, never block
 the redirect) -> return 302 to long_url
+```
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant RL as RateLimitMiddleware
+    participant Log as RequestLoggingMiddleware
+    participant API as GET /{short_code}
+    participant DB as SQLite (links, clicks)
+
+    C->>RL: GET /{short_code}
+    RL-->>C: 429 (if over threshold)
+    RL->>Log: allowed
+    Log->>API: dispatch
+    API->>DB: SELECT Link WHERE short_code = ?
+    alt not found
+        API-->>Log: 404
+    else found
+        API->>DB: UPDATE click_count = click_count + 1
+        API->>DB: INSERT Click(link_id)
+        Note over API,DB: failures here are logged and rolled back,<br/>never block the redirect
+        API-->>Log: 302 Location: long_url
+    end
+    Log-->>C: response + X-Request-ID header
 ```
 
 Both middlewares wrap every route except `/health`, which is exempt from

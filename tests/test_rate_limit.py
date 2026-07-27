@@ -23,6 +23,28 @@ def test_rate_limiter_tracks_keys_independently():
     assert limiter.allow("2.2.2.2") is True
 
 
+def test_expired_entries_are_evicted_to_bound_memory_growth(monkeypatch):
+    # Without cleanup, self._windows grows by one entry per distinct key
+    # forever, even long after that key's window has expired.
+    limiter = FixedWindowRateLimiter(max_requests=1, window_seconds=1)
+
+    import app.rate_limiter as rate_limiter_module
+
+    monkeypatch.setattr(rate_limiter_module, "_CLEANUP_INTERVAL_CALLS", 5)
+
+    now = [1000.0]
+    monkeypatch.setattr(rate_limiter_module.time, "monotonic", lambda: now[0])
+
+    limiter.allow("stale-key")
+    assert "stale-key" in limiter._windows
+
+    now[0] += 10  # well past the 1-second window
+    for i in range(6):
+        limiter.allow(f"filler-{i}")
+
+    assert "stale-key" not in limiter._windows
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     db_path = tmp_path / "rate_limit_test.db"

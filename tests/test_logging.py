@@ -1,10 +1,35 @@
 import importlib
+import json
 import logging
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+
+from app.logging_config import JsonFormatter
+
+
+def test_json_formatter_escapes_quotes_and_newlines_correctly():
+    # A prior version built the JSON line via string interpolation, which
+    # produced invalid JSON whenever the message contained a quote or
+    # newline - exactly what exception text (our own failure-path warning
+    # logs) commonly contains.
+    record = logging.LogRecord(
+        name="app.test",
+        level=logging.WARNING,
+        pathname=__file__,
+        lineno=1,
+        msg='value "weird" caused a\nmulti-line error',
+        args=(),
+        exc_info=None,
+    )
+
+    line = JsonFormatter().format(record)
+    parsed = json.loads(line)  # raises if the line isn't valid JSON
+
+    assert parsed["message"] == 'value "weird" caused a\nmulti-line error'
+    assert parsed["level"] == "WARNING"
 
 
 def test_request_completion_is_logged_with_request_id(client, caplog):

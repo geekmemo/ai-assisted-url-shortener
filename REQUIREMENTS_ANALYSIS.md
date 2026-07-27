@@ -37,6 +37,7 @@ load and under partial failure of non-critical subsystems.
 | Eventually-consistent analytics | The requirement asks for "analytics," not "real-time analytics." A strongly-consistent, low-latency counter is achievable without a streaming pipeline; committing to eventual consistency avoids a disproportionate infrastructure cost (message queue, stream processor) for an unstated latency SLA. |
 | Generate-and-retry collision handling, not pre-reserved counter-based IDs | At prototype scale, the probability of collision with a 7-character base62 keyspace (~3.5 × 10¹² combinations) is negligible; a counter-based scheme would add a coordination point (e.g. a distributed sequence generator) that solves a problem this scale doesn't have. |
 | Single-process deployment | No horizontal-scale requirement was stated. Rate limiting and in-memory state are explicitly scoped to single-instance operation; documented as a limitation, not hidden. |
+| No deduplication of `long_url` — each submission gets its own new `short_code`, even if the same URL was shortened before (verified directly: two identical submissions produce two distinct codes) | No requirement specified reuse. Independent codes per submission is standard behavior for this category of service (each submitter may want independent click analytics for their own share of a link), and avoids a stateful "look up existing entry" step on every write. Named explicitly here because it was flagged as an open ambiguity early on and deserved a written resolution, not just an implicit default. |
 
 ## 4. Non-functional requirements addressed
 
@@ -117,6 +118,8 @@ load and under partial failure of non-critical subsystems.
 | Rate limiter state lost on restart / not shared across instances | Certain, by design | Rate limiting resets on restart; ineffective if horizontally scaled | Explicitly documented limitation; requires a shared backend before multi-instance deployment |
 | Fixed-window rate limiting allows a burst of traffic exactly at window-reset boundaries [3] | Low impact at current scale | Brief over-admission of requests around the reset instant | Accepted trade-off for simplicity over a sliding-window counter; would reconsider if abuse at boundaries were observed in practice |
 | No schema migration tooling | Certain, by design | Manual intervention required for future schema changes against existing data | Acceptable for a greenfield prototype with no production data; flagged as required before further schema evolution against live data |
+| ~~Structured logs were not actually valid JSON when a message contained a quote or newline (e.g. exception text)~~ | Found during review, not by a user report | Downstream JSON log parsers would fail on exactly the failure-path warnings observability was built to surface | **Fixed**: replaced string-interpolated formatting with a formatter that builds a dict and calls `json.dumps()`; regression test asserts a message with embedded quotes/newlines still parses as valid JSON |
+| ~~Rate limiter's in-memory dict grew by one entry per distinct client key ever seen, with no eviction~~ | Found during review | Unbounded memory growth over a long-running process's lifetime | **Fixed**: periodic sweep evicts entries whose window has already expired; regression test verifies eviction actually occurs |
 
 ## 7. External references
 

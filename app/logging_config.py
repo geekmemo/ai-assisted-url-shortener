@@ -1,4 +1,5 @@
 import contextvars
+import json
 import logging
 import sys
 
@@ -10,11 +11,28 @@ import sys
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
 
 
+class JsonFormatter(logging.Formatter):
+    """Builds the log line via json.dumps rather than string interpolation.
+
+    A prior version interpolated the message directly into a JSON-shaped
+    string template, which produced invalid JSON whenever the message
+    contained a quote or newline — exactly what exception text (the
+    content of our own failure-path warning logs) commonly contains.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        return json.dumps(payload)
+
+
 def configure_logging() -> None:
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(
-        logging.Formatter('{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s"}')
-    )
+    handler.setFormatter(JsonFormatter())
     root = logging.getLogger()
     root.handlers = [handler]
     root.setLevel(logging.INFO)
