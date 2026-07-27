@@ -2,13 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.codegen import generate_short_code
 from app.config import settings
 from app.database import Base, engine, get_db
-from app.models import Link
+from app.models import Click, Link
 from app.schemas import ShortenRequest, ShortenResponse
 
 
@@ -56,4 +56,18 @@ def redirect_to_long_url(short_code: str, db: Session = Depends(get_db)):
     link = db.query(Link).filter_by(short_code=short_code).first()
     if link is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="short_code not found")
-    return RedirectResponse(url=link.long_url, status_code=status.HTTP_302_FOUND)
+
+    long_url = link.long_url
+
+    # Atomic SQL-level increment (SET click_count = click_count + 1), not a
+    # Python read-modify-write, so concurrent redirects can't lose updates to
+    # a stale in-memory value. Recording failures never block the redirect
+    # itself — a broken counter shouldn't turn into a broken link.
+    try:
+        db.query(Link).filter_by(id=link.id).update({Link.click_count: Link.click_count + 1})
+        db.add(Click(link_id=link.id))
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+
+    return RedirectResponse(url=long_url, status_code=status.HTTP_302_FOUND)
