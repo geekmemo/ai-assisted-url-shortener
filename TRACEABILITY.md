@@ -8,6 +8,20 @@ reconstructed after the fact; it was kept as work happened.
 
 ## Greenfield (Tasks 1-7)
 
+Task decomposition, agreed before implementation started:
+
+| # | Task | Depends on | Acceptance criteria |
+|---|---|---|---|
+| 1 | Project scaffold (FastAPI app, config, DB setup, health check) | — | App boots; `GET /health` returns 200 |
+| 2 | Data model: `Link(id, short_code, long_url, created_at)` | 1 | `create_all()` runs; unique constraint on `short_code` |
+| 3 | `POST /shorten` — create short URL, collision-safe code generation | 2 | Returns 201 + short_code; collision retry logic tested |
+| 4 | `GET /{short_code}` — redirect | 2 | 302 to long_url; 404 on unknown code |
+| 5 | Analytics: click counter + timestamp log per redirect | 4 | Click count increments atomically under concurrent hits |
+| 6 | Reliability: rate limiting middleware | 3, 4 | 429 past threshold; per-IP, configurable |
+| 7 | Test suite: unit + integration | 3, 4, 5, 6 | High coverage on core logic; concurrency test for collisions |
+
+Per-decision log for each task:
+
 | Ref | Prompt intent | AI output summary | Review | Decision |
 |---|---|---|---|---|
 | 1a | Generate FastAPI settings class (pydantic-settings) | Standard `BaseSettings` subclass with `database_url`, `short_code_length`, `max_collision_retries` | Initially over-generated a `rate_limit_per_minute` field belonging to a later task — removed to avoid speculative config before that task exists | Edited |
@@ -51,6 +65,17 @@ reconstructed after the fact; it was kept as work happened.
 
 ## Brownfield: webhook on link creation
 
+Task decomposition:
+
+| # | Task | Depends on | Acceptance criteria |
+|---|---|---|---|
+| B1 | Add `webhook_url` config (optional, disabled by default) | — | Existing behavior unchanged when unset |
+| B2 | Webhook dispatch: fire-and-forget POST with short_code/long_url payload | B1 | Only called when `webhook_url` is set; failures never raise |
+| B3 | Wire into `POST /shorten` via a background task | B2, Task 3 | Webhook does not block or slow the `/shorten` response |
+| B4 | Tests: called-when-configured, not-called-when-unset, `/shorten` still returns 201 if the webhook call fails | B3 | All pass; response latency unaffected by webhook failure |
+
+Per-decision log:
+
 | Ref | Prompt intent | AI output summary | Review | Decision |
 |---|---|---|---|---|
 | B1 | Add an optional webhook-URL setting, disabled by default | Correct as generated | — | Accepted as-is |
@@ -61,6 +86,20 @@ reconstructed after the fact; it was kept as work happened.
 | B6 | Boot verification | A second, real, independent HTTP server (not mocked) as the receiver, alongside a live instance pointed at it | N/A | Verified: correct payload received, primary response unaffected by the webhook's outcome |
 
 ## Ambiguous requirement: "make it enterprise-ready"
+
+Task decomposition, agreed after the ambiguity was resolved to a
+concrete observability scope (see `REQUIREMENTS_ANALYSIS.md` for the
+interpretation and out-of-scope items):
+
+| # | Task | Depends on | Acceptance criteria |
+|---|---|---|---|
+| A1 | Structured logging config | — | Logs emit a consistent format with timestamp/level/logger/message |
+| A2 | Per-request correlation ID, surfaced as an `X-Request-ID` response header | A1 | Every response carries a request ID; a caller-supplied one is honored if present |
+| A3 | Request-completion logging middleware | A1, A2 | Every request logs method/path/status/duration with its request ID |
+| A4 | Surface the two previously-silent failure paths as logged warnings, without changing their resilience behavior | A1 | Failures are visible in logs; responses are unaffected |
+| A5 | Tests for A3 and A4 | A1-A4 | All pass; coverage maintained |
+
+Per-decision log:
 
 | Ref | Prompt intent | AI output summary | Review | Decision |
 |---|---|---|---|---|
