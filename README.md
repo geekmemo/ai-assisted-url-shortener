@@ -62,8 +62,12 @@ headers so a caller can correlate their request with server logs.
 
 ## Project status
 
-See `ASSESSMENT_CONTEXT.md` for the running task decomposition, scope
-assumptions, and full AI-generated/edited/rejected traceability log.
+See `ASSESSMENT_CONTEXT.md` for the running task decomposition (greenfield,
+brownfield, and ambiguous scenarios), scope assumptions, and full
+AI-generated/edited/rejected traceability log. See `ARCHITECTURE.md` for
+components, control flow, and key decisions, and `ENGINEERING_SUMMARY.md`
+for the final plan/rationale, risks/trade-offs, assumptions, and
+limitations.
 
 ## References
 
