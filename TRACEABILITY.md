@@ -65,6 +65,26 @@ Per-decision log for each task:
 
 ## Brownfield: webhook on link creation
 
+**Codebase reasoning — impacted modules, APIs, and data flow**, worked
+through before any code was written, since this is an enhancement to
+already-shipped code, not a from-scratch build:
+
+- `app/config.py` — one new optional setting, `webhook_url` (default
+  `None`, opt-in). Not configuring it must leave all existing behavior
+  untouched.
+- `app/main.py`'s `POST /shorten` (the existing endpoint from Task 3) —
+  its request/response contract is unchanged; the only new behavior is
+  a side effect fired *after* the database commit succeeds. No new
+  public API surface is introduced.
+- New module `app/webhook.py` — kept isolated so the HTTP-dispatch
+  concern doesn't entangle with the core shorten logic, and so it's
+  separately mockable in tests without touching the network.
+- Data flow: `POST /shorten` → `Link` persisted (unchanged) → response
+  returned to the caller (unchanged) → webhook POST fired as a
+  background task *after* the response is already sent, so a slow or
+  unreachable webhook endpoint can never add latency to, or block, the
+  caller's request.
+
 Task decomposition:
 
 | # | Task | Depends on | Acceptance criteria |
