@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -45,3 +46,14 @@ def shorten(payload: ShortenRequest, db: Session = Depends(get_db)):
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail="Unable to generate a unique short code, please retry",
     )
+
+
+# Registered last: this single-segment catch-all would shadow /health and
+# /shorten (GET) if declared above them, since FastAPI matches path routes
+# in registration order.
+@app.get("/{short_code}")
+def redirect_to_long_url(short_code: str, db: Session = Depends(get_db)):
+    link = db.query(Link).filter_by(short_code=short_code).first()
+    if link is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="short_code not found")
+    return RedirectResponse(url=link.long_url, status_code=status.HTTP_302_FOUND)
