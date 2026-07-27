@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./url_shortener.db"
     short_code_length: int = 7
     max_collision_retries: int = 5
+    max_long_url_length: int = 2048
 
 
 settings = Settings()
