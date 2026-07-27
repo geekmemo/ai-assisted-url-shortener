@@ -100,11 +100,11 @@ decisions, which is the point of a technical walkthrough discussion.
 
 | Evaluation criterion | Where to look |
 |---|---|
-| Effectiveness of AI-assisted execution | Local traceability log (accept/edit/reject with rationale per change) |
+| Effectiveness of AI-assisted execution | `TRACEABILITY.md` (accept/edit/reject with rationale per change) |
 | Architecture/system design quality | `ARCHITECTURE.md` (component + sequence diagrams, key decisions) |
-| Depth of decomposition and execution quality | `REQUIREMENTS_ANALYSIS.md` §2 (scope table), greenfield/brownfield/ambiguous task tables in the traceability log |
+| Depth of decomposition and execution quality | `REQUIREMENTS_ANALYSIS.md` §2 (scope table), `TRACEABILITY.md` (greenfield/brownfield/ambiguous task-by-task record) |
 | Realism/quality of outputs | `tests/` (32 tests, 100% coverage); every endpoint boot-verified against a live server, not just unit-tested |
 | Validation and risk management rigor | `REQUIREMENTS_ANALYSIS.md` §6 (risk register, including two issues found and fixed during review) |
 | Clarity and defensibility of decisions | `REQUIREMENTS_ANALYSIS.md` §5 and §7 (decisions with alternatives considered and external references) |
-| Modular / testable / reliable / secure / scalable / safe change management | Modular: one file per concern in `app/`. Testable: 100% coverage. Reliable: atomic updates, fault-isolated side effects. Secure: CSPRNG, SSRF-aware webhook design, OWASP references. Scalable: documented single-process limitation with a stated path forward. Safe change management: one commit per task, nothing pushed without review |
-| Engineering judgment | Rejected AI drafts and root-caused bugs throughout the traceability log, not just accepted output |
+| Modular / testable / reliable / secure / scalable / safe change management | Modular: one file per concern in `app/`. Testable: 100% coverage, linting clean. Reliable: atomic updates, fault-isolated side effects. Secure: CSPRNG, SSRF-aware webhook design, OWASP references. Scalable: documented single-process limitation with a stated path forward. Safe change management: one commit per task, nothing pushed without review |
+| Engineering judgment | Rejected AI drafts and root-caused bugs throughout `TRACEABILITY.md`, not just accepted output |

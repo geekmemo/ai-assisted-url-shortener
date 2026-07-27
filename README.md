@@ -237,6 +237,9 @@ headers so a caller can correlate their request with server logs.
 - `AI_PROMPTING_FRAMEWORK.md` — the prompting discipline, grounding
   requirements, guardrails, security practices, and responsible-AI
   principles applied throughout development.
+- `TRACEABILITY.md` — every AI-generated piece of this project with its
+  accept/edit/reject decision and rationale, across the greenfield,
+  brownfield, and ambiguous-requirement scenarios.
 
 ## References
 

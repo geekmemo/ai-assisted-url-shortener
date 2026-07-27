@@ -4,8 +4,7 @@ This document specifies the prompting discipline, grounding requirements,
 guardrails, and responsible-AI practices applied throughout this project's
 development. It is a control document, not a retrospective: every rule
 below was applied *during* development, and violations were caught and
-corrected in the traceability log (see `ASSESSMENT_CONTEXT.md`, retained
-locally), not discovered after the fact.
+corrected in `TRACEABILITY.md`, not discovered after the fact.
 
 ## 1. Task-prompt structure
 
@@ -116,11 +115,11 @@ sounding defaults. Concretely, this project applied:
   ownership of every accept/edit/reject decision, and of overall
   correctness, maintainability, and production-readiness. Nothing was
   auto-committed or auto-merged without review.
-- **Full traceability, including negative outcomes.** The project's
-  traceability log records rejections, bugs found in AI-generated code,
-  and judgment calls that diverged from the AI's first suggestion, not
-  only successful outcomes — because a log that only records successes
-  is not a credible account of the process.
+- **Full traceability, including negative outcomes.** `TRACEABILITY.md`
+  records rejections, bugs found in AI-generated code, and judgment
+  calls that diverged from the AI's first suggestion, not only
+  successful outcomes — because a log that only records successes is
+  not a credible account of the process.
 - **No fabricated confidence.** Where the assistant was uncertain of a
   runtime detail (e.g. the exact ordering semantics of a framework's
   middleware stack, or whether background-task execution timing was
