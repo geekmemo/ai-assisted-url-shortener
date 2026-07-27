@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.env
+
+# Schwab-internal assessment doc — do not commit (see ASSESSMENT_CONTEXT.md)
+Assignment AI-Proficient Software Engineer.md
