@@ -79,10 +79,19 @@ through the Python interpreter instead: `python -m uvicorn app.main:app
 server** — there's a short window between running the start command
 and the server actually listening; wait a couple seconds and reload.
 If it persists, verify the server is really up before blaming the
-browser: `curl http://127.0.0.1:8000/health` from a second terminal —
-if that also fails, the server isn't running (check the terminal
-running `uvicorn` for a startup error); if `curl` succeeds but the
-browser doesn't, it's browser/proxy/firewall-specific, not the app.
+browser: `curl.exe http://127.0.0.1:8000/health` from a second
+terminal — if that also fails, the server isn't running (check the
+terminal running `uvicorn` for a startup error); if `curl.exe`
+succeeds but the browser doesn't, it's browser/proxy/firewall-specific,
+not the app.
+
+**In PowerShell, `curl -i ...` prompts for a "Uri" and then fails with
+`Cannot find drive. A drive with the name 'http' does not exist`** —
+PowerShell aliases the bare `curl` command to `Invoke-WebRequest`,
+which does not understand curl's flags (`-i` in particular) and misparses
+the URL as a result. Use `curl.exe` (with the extension) everywhere in
+this README instead of `curl` — that runs the real curl binary, not the
+PowerShell alias.
 
 ## Manual testing walkthrough
 
@@ -96,7 +105,7 @@ similar.
 database access:
 
 ```bash
-curl -i http://127.0.0.1:8000/health
+curl.exe -i http://127.0.0.1:8000/health
 ```
 
 Expected:
@@ -108,7 +117,7 @@ HTTP/1.1 200 OK
 **2. Create a short link** — the core feature:
 
 ```bash
-curl -i -X POST http://127.0.0.1:8000/shorten \
+curl.exe -i -X POST http://127.0.0.1:8000/shorten \
   -H "Content-Type: application/json" \
   -d "{\"long_url\": \"https://example.com/some/very/long/path\"}"
 ```
@@ -124,7 +133,7 @@ Copy the `short_code` from the response for the next steps.
 **3. Follow the redirect** — replace `aZ3kQ1x` with the code you got back:
 
 ```bash
-curl -i http://127.0.0.1:8000/aZ3kQ1x
+curl.exe -i http://127.0.0.1:8000/aZ3kQ1x
 ```
 
 Expected: `302 Found` with a `Location` header pointing at the original URL:
@@ -139,14 +148,14 @@ should navigate straight to `example.com`.)
 **4. Unknown code returns 404**:
 
 ```bash
-curl -i http://127.0.0.1:8000/doesnotexist
+curl.exe -i http://127.0.0.1:8000/doesnotexist
 ```
 Expected: `HTTP/1.1 404 Not Found`
 
 **5. Invalid URL is rejected with 422**:
 
 ```bash
-curl -i -X POST http://127.0.0.1:8000/shorten \
+curl.exe -i -X POST http://127.0.0.1:8000/shorten \
   -H "Content-Type: application/json" \
   -d "{\"long_url\": \"not-a-url\"}"
 ```
@@ -169,7 +178,7 @@ header; check it's present and that the same ID shows up in the
 server's terminal log line for that request:
 
 ```bash
-curl -i http://127.0.0.1:8000/health
+curl.exe -i http://127.0.0.1:8000/health
 ```
 Look for `x-request-id: <uuid>` in the response, and a matching
 `request_id=<uuid>` in the JSON log line printed in the terminal
