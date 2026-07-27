@@ -1,15 +1,33 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.codegen import generate_short_code
 from app.config import settings
 from app.database import Base, engine, get_db
 from app.models import Click, Link
+from app.rate_limiter import rate_limiter
 from app.schemas import ShortenRequest, ShortenResponse
+
+# Exempt from rate limiting: a monitored liveness check shouldn't be able to
+# trip 429s and get flagged as "unhealthy" by whatever polls it.
+_RATE_LIMIT_EXEMPT_PATHS = {"/health"}
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in _RATE_LIMIT_EXEMPT_PATHS:
+            return await call_next(request)
+
+        client_ip = request.client.host if request.client else "unknown"
+        if not rate_limiter.allow(client_ip):
+            return JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS, content={"detail": "Rate limit exceeded"})
+
+        return await call_next(request)
 
 
 @asynccontextmanager
@@ -19,6 +37,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="URL Shortener", lifespan=lifespan)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/health")

@@ -1,28 +1,3 @@
-import importlib
-
-import pytest
-from fastapi.testclient import TestClient
-
-
-@pytest.fixture
-def client(tmp_path, monkeypatch):
-    db_path = tmp_path / "shorten_test.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
-
-    import app.config
-    import app.database
-    import app.models
-    import app.main
-
-    importlib.reload(app.config)
-    importlib.reload(app.database)
-    importlib.reload(app.models)
-    importlib.reload(app.main)
-
-    with TestClient(app.main.app) as test_client:
-        yield test_client, app.main
-
-
 def test_shorten_creates_link_and_returns_201(client):
     test_client, _ = client
 

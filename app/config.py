@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     short_code_length: int = 7
     max_collision_retries: int = 5
     max_long_url_length: int = 2048
+    rate_limit_per_minute: int = 60
 
 
 settings = Settings()
