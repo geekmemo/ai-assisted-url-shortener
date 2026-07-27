@@ -11,6 +11,8 @@ Python 3.11+ / FastAPI / SQLAlchemy / SQLite (dev) / pytest
 
 ## Setup
 
+Requires Python 3.11+. From the project root:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate      # Windows
@@ -22,22 +24,164 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
+
+(`python -m uvicorn ...` rather than the bare `uvicorn` command — see
+Troubleshooting below for why this matters on Windows.)
 
 Then visit `http://127.0.0.1:8000/health` — should return `{"status": "ok"}`.
 
 ## Test
 
 ```bash
-pytest -v
+python -m pytest -v
 ```
 
 With coverage:
 
 ```bash
-pytest --cov=app --cov-report=term-missing
+python -m pytest --cov=app --cov-report=term-missing
 ```
+
+## Troubleshooting
+
+**`python : The term 'python' is not recognized` / opens the Microsoft
+Store** — Windows ships a fake `python` command that only exists to
+prompt a Store install. Install Python 3.11+ from
+[python.org](https://www.python.org/downloads/) or via
+`winget install Python.Python.3.12`, then **fully close and reopen your
+terminal** (a new tab is not enough — PATH is only refreshed by a new
+terminal process). If it's still not found afterward, call the
+interpreter by its full install path directly, e.g.
+`C:\Users\<you>\AppData\Local\Programs\Python\Python312\python.exe -m venv .venv`.
+
+**`Permission denied: '...\.venv\Scripts\python.exe'` when creating a
+venv** — a `.venv` already exists and is *active in the current shell*
+(check for `(.venv)` in your prompt); Windows locks a running
+interpreter's executable, so it can't be overwritten in place. Either
+just use the existing venv (skip straight to `pip install` / running
+tests), or `deactivate` first, delete the `.venv` folder, and recreate it.
+
+**Everything fails and nothing looks right** — check you're actually in
+the project directory: run `pwd` (or look at your prompt) and confirm
+it ends in `AIAssistedSW`, and that `ls` shows `app/`, `tests/`,
+`requirements.txt`. Commands run from the wrong directory fail in
+confusing, unrelated-looking ways.
+
+**`uvicorn.exe : ... blocked by an Application Control policy` /
+mentions "Smart App Control"** — Windows Smart App Control blocks the
+standalone `uvicorn.exe` launcher as an unrecognized executable. Run it
+through the Python interpreter instead: `python -m uvicorn app.main:app
+--reload` (this is why the Run section above uses that form directly).
+
+**Browser shows `ERR_CONNECTION_REFUSED` right after starting the
+server** — there's a short window between running the start command
+and the server actually listening; wait a couple seconds and reload.
+If it persists, verify the server is really up before blaming the
+browser: `curl http://127.0.0.1:8000/health` from a second terminal —
+if that also fails, the server isn't running (check the terminal
+running `uvicorn` for a startup error); if `curl` succeeds but the
+browser doesn't, it's browser/proxy/firewall-specific, not the app.
+
+## Manual testing walkthrough
+
+With the server running (`python -m uvicorn app.main:app --reload`),
+these are the things worth checking by hand and what each should show.
+All examples use `curl`; a browser works fine for the two `GET`
+requests, but `POST` needs `curl`, VS Code's REST Client, Postman, or
+similar.
+
+**1. Health check** — should always return `200` instantly, with no
+database access:
+
+```bash
+curl -i http://127.0.0.1:8000/health
+```
+
+Expected:
+```
+HTTP/1.1 200 OK
+{"status":"ok"}
+```
+
+**2. Create a short link** — the core feature:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/shorten \
+  -H "Content-Type: application/json" \
+  -d "{\"long_url\": \"https://example.com/some/very/long/path\"}"
+```
+
+Expected: `201 Created` with a generated 7-character `short_code`:
+```
+HTTP/1.1 201 Created
+{"short_code":"aZ3kQ1x","long_url":"https://example.com/some/very/long/path"}
+```
+
+Copy the `short_code` from the response for the next steps.
+
+**3. Follow the redirect** — replace `aZ3kQ1x` with the code you got back:
+
+```bash
+curl -i http://127.0.0.1:8000/aZ3kQ1x
+```
+
+Expected: `302 Found` with a `Location` header pointing at the original URL:
+```
+HTTP/1.1 302 Found
+location: https://example.com/some/very/long/path
+```
+
+(Or just paste `http://127.0.0.1:8000/aZ3kQ1x` into a browser — it
+should navigate straight to `example.com`.)
+
+**4. Unknown code returns 404**:
+
+```bash
+curl -i http://127.0.0.1:8000/doesnotexist
+```
+Expected: `HTTP/1.1 404 Not Found`
+
+**5. Invalid URL is rejected with 422**:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/shorten \
+  -H "Content-Type: application/json" \
+  -d "{\"long_url\": \"not-a-url\"}"
+```
+Expected: `HTTP/1.1 422 Unprocessable Entity` with a validation error body.
+
+**6. Rate limiting** — restart the server with a low threshold to see
+it trip:
+
+```bash
+$env:RATE_LIMIT_PER_MINUTE=3   # PowerShell; use `export` on macOS/Linux
+python -m uvicorn app.main:app --reload
+```
+
+Then hit any non-`/health` endpoint 4 times in a row (e.g. re-run step
+4 four times) — the 4th should return `HTTP/1.1 429 Too Many Requests`.
+`/health` is exempt and will keep returning `200` regardless.
+
+**7. Request correlation** — every response carries an `X-Request-ID`
+header; check it's present and that the same ID shows up in the
+server's terminal log line for that request:
+
+```bash
+curl -i http://127.0.0.1:8000/health
+```
+Look for `x-request-id: <uuid>` in the response, and a matching
+`request_id=<uuid>` in the JSON log line printed in the terminal
+running `uvicorn`.
+
+**8. Automated suite** — the fast way to check everything at once
+rather than clicking through the above by hand:
+
+```bash
+python -m pytest -v
+```
+Expected: `30 passed`.
 
 ## API
 
