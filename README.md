@@ -2,7 +2,8 @@
 
 A URL shortener service built as an AI-assisted engineering exercise: core APIs,
 analytics, and reliability features, developed with disciplined AI-assisted
-execution and traceable review decisions (see `ASSESSMENT_CONTEXT.md`).
+execution and traceable review decisions (see `REQUIREMENTS_ANALYSIS.md` and
+`AI_PROMPTING_FRAMEWORK.md`).
 
 ## Stack
 
@@ -60,21 +61,24 @@ message) with a `request_id` — either generated per request or taken from
 an incoming `X-Request-ID` header, and always echoed back in the response
 headers so a caller can correlate their request with server logs.
 
-## Project status
+## Project status and documentation
 
-See `ASSESSMENT_CONTEXT.md` for the running task decomposition (greenfield,
-brownfield, and ambiguous scenarios), scope assumptions, and full
-AI-generated/edited/rejected traceability log. See `ARCHITECTURE.md` for
-components, control flow, and key decisions, and `ENGINEERING_SUMMARY.md`
-for the final plan/rationale, risks/trade-offs, assumptions, and
-limitations.
+- `REQUIREMENTS_ANALYSIS.md` — requirement interpretation, ambiguity
+  resolution, assumptions, design decisions and alternatives considered,
+  non-functional requirements addressed, and the risk register.
+- `ARCHITECTURE.md` — components, tools, execution approach, control
+  flow, and key decisions.
+- `ENGINEERING_SUMMARY.md` — final plan/rationale, artifacts,
+  risks/trade-offs/validation, assumptions, and limitations.
+- `AI_PROMPTING_FRAMEWORK.md` — the prompting discipline, grounding
+  requirements, guardrails, security practices, and responsible-AI
+  principles applied throughout development.
 
 ## References
 
 - [System Design: URL Shortening Service](https://www.geeksforgeeks.org/system-design/system-design-url-shortening-service/) —
   used to cross-check schema sizing (`long_url` ~2048 chars, base62
-  `short_code` at 7 chars) and collision-handling approach; see
-  "External reference check" in `ASSESSMENT_CONTEXT.md` for the full
-  comparison, including a deliberate divergence (SQLite vs. the
-  article's NoSQL-at-scale recommendation, which doesn't apply at this
-  project's scope).
+  `short_code` at 7 chars) and collision-handling approach; see Section 5
+  of `REQUIREMENTS_ANALYSIS.md` for the full comparison, including a
+  deliberate divergence (SQLite vs. the article's NoSQL-at-scale
+  recommendation, which doesn't apply at this project's scope).

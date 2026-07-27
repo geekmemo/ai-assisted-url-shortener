@@ -6,5 +6,10 @@ __pycache__/
 .env
 .coverage
 
-# Schwab-internal assessment doc — do not commit (see ASSESSMENT_CONTEXT.md)
+# Schwab-internal assessment doc — do not commit
 Assignment AI-Proficient Software Engineer.md
+
+# Internal working notes / running traceability log — local only, not for
+# interviewer/panel review. Public-facing equivalents: REQUIREMENTS_ANALYSIS.md
+# and AI_PROMPTING_FRAMEWORK.md.
+ASSESSMENT_CONTEXT.md

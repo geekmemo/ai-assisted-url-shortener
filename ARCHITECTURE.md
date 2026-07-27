@@ -46,8 +46,8 @@ tests/
 Every task in this project followed the same loop, driven by AI-assisted
 generation with explicit human review at each step:
 
-1. **Decompose** the task with dependencies and acceptance criteria
-   (documented in `ASSESSMENT_CONTEXT.md` before implementation started)
+1. **Decompose** the task with dependencies and acceptance criteria,
+   documented before implementation started
 2. **Generate** the implementation with AI assistance
 3. **Review** — accept as-is, edit, or reject each generated piece, with a
    stated rationale (never a blanket accept)
@@ -56,12 +56,15 @@ generation with explicit human review at each step:
 5. **Boot-verify** — run the real app with a live server and real HTTP
    calls (`curl`/independent processes), not just in-process TestClient,
    for every task
-6. **Log** the decision in `ASSESSMENT_CONTEXT.md`'s traceability table
+6. **Log** the decision in a running traceability record (accept/edit/
+   reject with rationale for every AI-generated piece)
 7. **Commit and push** each task as its own commit
 
-This loop is why the traceability log contains entries like "rejected
-AI's first draft" and "found a real bug" rather than only "accepted as
-generated" — the review step was substantive, not procedural.
+This loop is why the process included entries like "rejected AI's first
+draft" and "found a real bug" rather than only "accepted as generated" —
+the review step was substantive, not procedural. See
+`AI_PROMPTING_FRAMEWORK.md` for the full grounding/guardrail discipline
+this loop was run under.
 
 ## Control flow
 
@@ -87,13 +90,14 @@ rate limiting (but still logged).
 
 ## Key decisions
 
-(Full rationale for each is in `ASSESSMENT_CONTEXT.md`'s traceability
-log — this is a summary, not a replacement.)
+(Full rationale for each, including alternatives considered, is in
+`REQUIREMENTS_ANALYSIS.md` Sections 5-6 — this is a summary, not a
+replacement.)
 
 - **SQLite over NoSQL**, despite a standard system-design reference
   recommending NoSQL at 30M-user scale — that recommendation is scale-
   driven, not correctness-driven, and doesn't apply to this project's
-  scope. See "External reference check" in `ASSESSMENT_CONTEXT.md`.
+  scope. See Section 5 of `REQUIREMENTS_ANALYSIS.md`.
 - **Atomic SQL-level increments** (`UPDATE ... SET x = x + 1`) instead of
   Python read-modify-write, to avoid lost updates under concurrent
   redirects — verified with both an in-process 25-thread test and a live

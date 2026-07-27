@@ -10,10 +10,11 @@ before implementation, not inferred after the fact. Two further scenarios
 were executed on top of that stable base: a brownfield enhancement
 (webhook notification on link creation) and an ambiguous-requirement
 scenario ("make it enterprise-ready," deliberately vague, resolved to a
-concrete observability slice). See `ASSESSMENT_CONTEXT.md` for the full
-decomposition, scope assumptions, and a complete traceability log —
-every AI-generated piece of code has a recorded accept/edit/reject
-decision with a stated reason, not a blanket approval.
+concrete observability slice). See `REQUIREMENTS_ANALYSIS.md` for the
+full requirement decomposition, scope assumptions, and design rationale;
+every AI-generated piece of code went through a recorded accept/edit/
+reject decision with a stated reason, not a blanket approval (see
+`AI_PROMPTING_FRAMEWORK.md` for the discipline this was run under).
 
 Python/FastAPI/SQLAlchemy/SQLite/pytest was chosen because it matches
 current hands-on production experience (voice AI orchestration, workflow
@@ -35,8 +36,10 @@ traceability, not just the resulting code.
   webhook network errors) to prove the system degrades the way it's
   documented to, not just that the happy path works.
 - **Docs**: `README.md` (setup/run/test/API/config), `ARCHITECTURE.md`
-  (components, control flow, key decisions), `ASSESSMENT_CONTEXT.md`
-  (running task decomposition + full traceability log), this file.
+  (components, control flow, key decisions), `REQUIREMENTS_ANALYSIS.md`
+  (requirement decomposition, assumptions, design rationale, risk
+  register), `AI_PROMPTING_FRAMEWORK.md` (prompting discipline,
+  guardrails, security, responsible AI), this file.
 
 ## Risks, trade-offs, and validation
 
