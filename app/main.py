@@ -1,3 +1,6 @@
+import logging
+import time
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
@@ -9,10 +12,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.codegen import generate_short_code
 from app.config import settings
 from app.database import Base, engine, get_db
+from app.logging_config import configure_logging, request_id_var
 from app.models import Click, Link
 from app.rate_limiter import rate_limiter
 from app.schemas import ShortenRequest, ShortenResponse
 from app.webhook import send_link_created_webhook
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 # Exempt from rate limiting: a monitored liveness check shouldn't be able to
 # trip 429s and get flagged as "unhealthy" by whatever polls it.
@@ -31,6 +38,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        token = request_id_var.set(request_id)
+        start = time.monotonic()
+        try:
+            response = await call_next(request)
+            duration_ms = round((time.monotonic() - start) * 1000, 2)
+            logger.info(
+                f"request_id={request_id} {request.method} {request.url.path} "
+                f"-> {response.status_code} ({duration_ms}ms)"
+            )
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            request_id_var.reset(token)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -39,6 +64,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="URL Shortener", lifespan=lifespan)
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 
 @app.get("/health")
@@ -62,7 +88,13 @@ def shorten(payload: ShortenRequest, background_tasks: BackgroundTasks, db: Sess
         db.refresh(link)
         # Runs after the response is sent — a slow or unreachable webhook
         # endpoint can never add latency to, or fail, the caller's request.
-        background_tasks.add_task(send_link_created_webhook, link.short_code, link.long_url)
+        # request_id is captured now and passed explicitly rather than read
+        # from the contextvar inside the background task, since it's unclear
+        # whether that background task runs before or after
+        # RequestLoggingMiddleware resets the contextvar.
+        background_tasks.add_task(
+            send_link_created_webhook, link.short_code, link.long_url, request_id_var.get()
+        )
         return ShortenResponse(short_code=link.short_code, long_url=link.long_url)
 
     raise HTTPException(
@@ -90,7 +122,10 @@ def redirect_to_long_url(short_code: str, db: Session = Depends(get_db)):
         db.query(Link).filter_by(id=link.id).update({Link.click_count: Link.click_count + 1})
         db.add(Click(link_id=link.id))
         db.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.rollback()
+        logger.warning(
+            f"request_id={request_id_var.get()} click recording failed for short_code={short_code}: {exc}"
+        )
 
     return RedirectResponse(url=long_url, status_code=status.HTTP_302_FOUND)

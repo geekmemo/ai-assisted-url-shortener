@@ -38,6 +38,28 @@ With coverage:
 pytest --cov=app --cov-report=term-missing
 ```
 
+## API
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Liveness check; never touches the database; exempt from rate limiting |
+| `/shorten` | POST | `{"long_url": "https://..."}` → `201 {"short_code": "...", "long_url": "..."}` |
+| `/{short_code}` | GET | `302` redirect to the original URL; `404` if unknown |
+
+## Configuration
+
+All settings are optional env vars (see `app/config.py` for defaults):
+`DATABASE_URL`, `SHORT_CODE_LENGTH`, `MAX_COLLISION_RETRIES`,
+`MAX_LONG_URL_LENGTH`, `RATE_LIMIT_PER_MINUTE`, `WEBHOOK_URL` (unset by
+default — link-creation webhook is opt-in).
+
+## Observability
+
+Every request is logged as a single JSON line (timestamp, level, logger,
+message) with a `request_id` — either generated per request or taken from
+an incoming `X-Request-ID` header, and always echoed back in the response
+headers so a caller can correlate their request with server logs.
+
 ## Project status
 
 See `ASSESSMENT_CONTEXT.md` for the running task decomposition, scope
