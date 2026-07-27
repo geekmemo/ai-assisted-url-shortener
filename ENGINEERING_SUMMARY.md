@@ -92,6 +92,19 @@ traceability, not just the resulting code.
   project's size, and named the rest as future work rather than
   building a placeholder integration with nothing behind it.
 
+## Assignment scope coverage
+
+The assignment's stated scope (§3) names four categories this project
+is expected to cover. All four are addressed, not just the two that
+would come from a from-scratch build alone:
+
+| Scope item | Where it's covered |
+|---|---|
+| Greenfield scenarios (new systems/features) | The 8-task base build — `TRACEABILITY.md` entries 1a-7f |
+| Brownfield scenarios (enhancements, refactors, bug fixes) | The webhook enhancement to the existing `/shorten` endpoint (`TRACEABILITY.md` B1-B6); the post-completion review pass that found and fixed two real bugs and added linting counts as refactor/bug-fix work on top of already-shipped code, not new-system work |
+| Test and documentation improvements | Two coverage gaps investigated and closed in Task 7 (not just a coverage number); linting added as a previously-missing quality gate; five documentation files iterated on for accuracy and completeness across multiple review passes |
+| Well-defined and ambiguous requirements | Tasks 1-6 had explicit, well-defined acceptance criteria agreed before implementation; "make it enterprise-ready" (`TRACEABILITY.md` A1-A6) was deliberately ambiguous and required explicit interpretation and scoping before any code was written |
+
 ## Evaluation criteria quick reference
 
 This table is a lookup aid for verifying a specific claim after the fact
