@@ -31,8 +31,8 @@ flowchart TB
     Shorten --> Schemas
     Shorten --> Codegen
     Shorten --> DB
-    Shorten -. "BackgroundTask<br/>(after response sent)" .-> Webhook
-    Webhook -. "HTTP POST" .-> External
+    Shorten -.->|"BackgroundTask (after response sent)"| Webhook
+    Webhook -.->|"HTTP POST"| External
 
     Redirect --> DB
 
