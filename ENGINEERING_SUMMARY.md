@@ -73,6 +73,12 @@ traceability, not just the resulting code.
   survives a process restart, and neither works correctly across
   multiple instances without a shared backend (e.g. Redis). Named
   explicitly rather than left implicit.
+- **Fixed-window rate limiting allows a burst of traffic at window-reset
+  boundaries** — a documented, known weakness of this algorithm relative
+  to a sliding-window counter (see reference [3] in
+  `REQUIREMENTS_ANALYSIS.md`). Accepted deliberately for simplicity at
+  this scale; would be reconsidered if boundary abuse were observed in
+  practice.
 - **No authentication/authorization, no multi-tenancy** — every link is
   anonymous and globally visible to anyone who has (or guesses) its
   short code. This was a stated MVP scope decision, not an oversight.

@@ -76,9 +76,13 @@ headers so a caller can correlate their request with server logs.
 
 ## References
 
-- [System Design: URL Shortening Service](https://www.geeksforgeeks.org/system-design/system-design-url-shortening-service/) —
-  used to cross-check schema sizing (`long_url` ~2048 chars, base62
-  `short_code` at 7 chars) and collision-handling approach; see Section 5
-  of `REQUIREMENTS_ANALYSIS.md` for the full comparison, including a
-  deliberate divergence (SQLite vs. the article's NoSQL-at-scale
-  recommendation, which doesn't apply at this project's scope).
+Each reference below grounds a specific design decision — see Section 5
+("Design decisions and alternatives considered") of
+`REQUIREMENTS_ANALYSIS.md` for how each was applied, including one
+deliberate divergence.
+
+- [System Design: URL Shortening Service](https://www.geeksforgeeks.org/system-design/system-design-url-shortening-service/) — schema sizing and collision-handling approach.
+- [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) — CSPRNG requirement for unpredictable identifiers.
+- [Cloudflare Engineering: Counting things, a lot of different things](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/) — fixed-window vs. sliding-window rate limiting trade-offs.
+- [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) — grounds the operator-configured (not user-supplied) webhook URL decision.
+- [FastAPI: Lifespan Events](https://fastapi.tiangolo.com/advanced/events/) — confirms `on_event` is deprecated in favor of `lifespan`.
