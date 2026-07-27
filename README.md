@@ -227,6 +227,11 @@ Expected: `32 passed`.
 | `/shorten` | POST | `{"long_url": "https://..."}` → `201 {"short_code": "...", "long_url": "..."}` |
 | `/{short_code}` | GET | `302` redirect to the original URL; `404` if unknown |
 
+FastAPI generates a full OpenAPI schema automatically from the code —
+no separate spec to keep in sync. With the server running, visit
+`http://127.0.0.1:8000/docs` for interactive Swagger UI, or
+`http://127.0.0.1:8000/openapi.json` for the raw schema.
+
 ## Configuration
 
 All settings are optional env vars (see `app/config.py` for defaults):
