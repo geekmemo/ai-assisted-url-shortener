@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     max_collision_retries: int = 5
     max_long_url_length: int = 2048
     rate_limit_per_minute: int = 60
+    webhook_url: str | None = None
 
 
 settings = Settings()

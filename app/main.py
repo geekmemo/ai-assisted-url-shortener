@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from app.database import Base, engine, get_db
 from app.models import Click, Link
 from app.rate_limiter import rate_limiter
 from app.schemas import ShortenRequest, ShortenResponse
+from app.webhook import send_link_created_webhook
 
 # Exempt from rate limiting: a monitored liveness check shouldn't be able to
 # trip 429s and get flagged as "unhealthy" by whatever polls it.
@@ -46,7 +47,7 @@ def health():
 
 
 @app.post("/shorten", response_model=ShortenResponse, status_code=status.HTTP_201_CREATED)
-def shorten(payload: ShortenRequest, db: Session = Depends(get_db)):
+def shorten(payload: ShortenRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     long_url = str(payload.long_url)
 
     for _ in range(settings.max_collision_retries):
@@ -59,6 +60,9 @@ def shorten(payload: ShortenRequest, db: Session = Depends(get_db)):
             db.rollback()
             continue
         db.refresh(link)
+        # Runs after the response is sent — a slow or unreachable webhook
+        # endpoint can never add latency to, or fail, the caller's request.
+        background_tasks.add_task(send_link_created_webhook, link.short_code, link.long_url)
         return ShortenResponse(short_code=link.short_code, long_url=link.long_url)
 
     raise HTTPException(
