@@ -149,9 +149,9 @@ would come from a from-scratch build alone:
 
 | Scope item | Where it's covered |
 |---|---|
-| Greenfield scenarios (new systems/features) | The 8-task base build — `TRACEABILITY.md` entries 1a-7f |
-| Brownfield scenarios (enhancements, refactors, bug fixes) | The webhook enhancement to the existing `/shorten` endpoint (`TRACEABILITY.md` B1-B6); the post-completion review pass that found and fixed two real bugs and added linting counts as refactor/bug-fix work on top of already-shipped code, not new-system work |
-| Test and documentation improvements | Two coverage gaps investigated and closed in Task 7 (not just a coverage number); linting added as a previously-missing quality gate; five documentation files iterated on for accuracy and completeness across multiple review passes |
+| Greenfield scenarios (new systems/features) | The 8-task base build — `TRACEABILITY.md`'s greenfield log |
+| Brownfield scenarios (enhancements, refactors, bug fixes) | The webhook enhancement to the existing `/shorten` endpoint (`TRACEABILITY.md` B1-B6); the post-completion review pass that found and fixed two real bugs, plus adding linting/security/dependency scanning, counts as refactor/bug-fix work on top of already-shipped code, not new-system work |
+| Test and documentation improvements | Two coverage gaps investigated and closed in Task 7 (not just a coverage number); linting, security scanning, and dependency-vulnerability scanning added as previously-missing quality gates; six documentation files iterated on for accuracy and completeness across multiple review passes |
 | Well-defined and ambiguous requirements | Tasks 1-6 had explicit, well-defined acceptance criteria agreed before implementation; "make it enterprise-ready" (`TRACEABILITY.md` A1-A6) was deliberately ambiguous and required explicit interpretation and scoping before any code was written |
 
 ## Evaluation criteria quick reference
@@ -168,5 +168,5 @@ decisions, which is the point of a technical walkthrough discussion.
 | Realism/quality of outputs | `tests/` (32 tests, 100% coverage); every endpoint boot-verified against a live server, not just unit-tested |
 | Validation and risk management rigor | `REQUIREMENTS_ANALYSIS.md` §6 (risk register, including two issues found and fixed during review) |
 | Clarity and defensibility of decisions | `REQUIREMENTS_ANALYSIS.md` §5 and §7 (decisions with alternatives considered and external references) |
-| Modular / testable / reliable / secure / scalable / safe change management | Modular: one file per concern in `app/`. Testable: 100% coverage, linting clean. Reliable: atomic updates, fault-isolated side effects. Secure: CSPRNG, SSRF-aware webhook design, OWASP references. Scalable: documented single-process limitation with a stated path forward. Safe change management: one commit per task, nothing pushed without review |
+| Modular / testable / reliable / secure / scalable / safe change management | Modular: one file per concern in `app/`. Testable: 100% coverage. Reliable: atomic updates, fault-isolated side effects. Secure: CSPRNG, SSRF-aware webhook design, OWASP references, plus `bandit` (security static analysis) and `pip-audit` (dependency vulnerability scanning), both clean. Scalable: documented single-process limitation with a stated path forward. Safe change management: one commit per task, nothing pushed without review, all quality gates (lint/security/deps/tests) enforced automatically in CI (`.github/workflows/ci.yml`) on every push, not just run manually once |
 | Engineering judgment | Rejected AI drafts and root-caused bugs throughout `TRACEABILITY.md`, not just accepted output |
