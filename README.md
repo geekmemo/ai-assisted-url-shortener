@@ -40,7 +40,7 @@ raw schema.
 
 - `ARCHITECTURE.md` — components, tools, execution approach, control flow, key decisions
 - `REQUIREMENTS_ANALYSIS.md` — requirement interpretation, assumptions, design decisions and alternatives considered, risk register
-- `ENGINEERING_SUMMARY.md` — plan/rationale, artifacts, risks/trade-offs, assumptions, limitations, and quick-reference tables mapping the assignment's scope and evaluation criteria to evidence
+- `ENGINEERING_SUMMARY.md` — plan/rationale, artifacts, testing approach, risks/trade-offs, assumptions, limitations, and quick-reference tables mapping the assignment's scope and evaluation criteria to evidence
 - `AI_PROMPTING_FRAMEWORK.md` — prompting discipline, grounding requirements, guardrails, security practices, responsible-AI principles
 - `TRACEABILITY.md` — every AI-generated piece of this project with its accept/edit/reject decision and rationale
 

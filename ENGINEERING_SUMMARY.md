@@ -41,6 +41,55 @@ traceability, not just the resulting code.
   register), `AI_PROMPTING_FRAMEWORK.md` (prompting discipline,
   guardrails, security, responsible AI), this file.
 
+## Testing approach
+
+Tests are layered by what they're actually trying to catch, not one
+uniform style applied everywhere:
+
+- **Unit tests** for isolated logic that doesn't need the full app —
+  e.g. the rate limiter's threshold/eviction behavior and the JSON log
+  formatter are tested directly, independent of any HTTP layer.
+- **Integration tests** via FastAPI's `TestClient`, exercising real
+  request → response cycles against the actual app object (validation,
+  routing, database writes), for the ordinary behavior of every
+  endpoint.
+- **Concurrency tests at two levels, deliberately** — an in-process
+  25-thread test, *and* a separate live test firing 20 real concurrent
+  OS-level processes at a running server. The two levels exist because
+  in-process threading doesn't fully exercise real OS-level scheduling
+  and connection handling; relying on only the threaded version would
+  leave a real concurrency bug possible to miss.
+- **Failure-injection tests** that deliberately force a dependency to
+  fail (a mocked DB commit raising, a mocked webhook call raising) and
+  assert the documented resilience guarantee actually holds — proving
+  behavior, not just asserting it in a comment.
+- **Regression tests for specific bugs already found**, so they can't
+  silently reappear — e.g. the route-shadowing ordering issue, the
+  Pydantic-vs-application-validator boundary, the test-fixture
+  reload-ordering bug.
+- **Live boot verification for every task**, on top of all of the
+  above: a real `uvicorn` process hit with real HTTP calls
+  (`curl`, or a second independent process for the webhook scenario),
+  not only in-process `TestClient` calls. This exists because a passing
+  `TestClient` suite can still mask a real startup or process-boundary
+  issue that only a genuinely running server would surface.
+- **100% coverage treated as a floor to investigate, not a target to
+  pad** — the two gaps found in Task 7 were root-caused rather than
+  closed with an incidental assertion; one revealed a test that was
+  passing for the wrong reason entirely.
+
+**Testing trade-offs and limitations, stated rather than left implicit:**
+
+- No load/performance testing beyond the demonstrated 20-25 concurrent
+  request scale — this project's concurrency tests prove *correctness*
+  under contention, not throughput or latency at production scale.
+- No property-based or fuzz testing — inputs are validated with
+  targeted edge cases (e.g. the 2049-2083 character boundary for the
+  long-URL length check), not generated automatically.
+- Static type checking (`mypy`) isn't part of the test suite or CI —
+  see the linting/quality-gates note below; a real gap, not silently
+  assumed covered by the other checks.
+
 ## Risks, trade-offs, and validation
 
 | Risk / trade-off | Mitigation / validation |
