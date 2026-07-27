@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import Base, engine
+from app.models import Link  # noqa: F401 — import registers Link with Base.metadata
 
 
 @asynccontextmanager
