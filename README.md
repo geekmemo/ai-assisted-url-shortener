@@ -106,13 +106,8 @@ All settings are optional env vars (see `app/config.py` for defaults):
 `MAX_LONG_URL_LENGTH`, `RATE_LIMIT_PER_MINUTE`, `WEBHOOK_URL` (unset by
 default — link-creation webhook is opt-in).
 
-By default this creates `url_shortener.db` in the project directory.
-Data persists there across server restarts — `create_all()` only
-creates missing tables on startup, it never wipes existing ones. The
-file is deliberately excluded from version control (`.gitignore`), the
-same way any real project excludes its local dev database — that's
-about not committing runtime state as if it were source code, not a
-statement that the app itself doesn't persist data.
+By default this creates `url_shortener.db` in the project directory
+(gitignored, like any local dev database).
 
 ## References
 
